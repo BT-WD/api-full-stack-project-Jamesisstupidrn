@@ -1,1 +1,101 @@
+/* Container for the entire game */
+#game-container {
+    width: 600px;
+    height: 400px;
+    position: relative;
+    border: 10px solid #333;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
 
+    /* FALLBACK: If image fails, you will see this blue color */
+    background-color: #87CEEB; 
+
+    /* FIXED DIRECT LINK (Ends in .png) */
+    background-image: url('https://githubusercontent.com');
+    
+    background-size: 100% 100%; /* Force image to fill the 600x400 box */
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+
+/* Positioning for the Pokémon sprites */
+.pokemon-sprite {
+    width: 150px;
+    position: absolute;
+    image-rendering: pixelated; 
+    z-index: 2;
+}
+
+/* Combined your IDs to match the HTML exactly */
+#player-sprite {
+    bottom: 120px; 
+    left: 40px;
+}
+
+#enemy-sprite {
+    top: 60px;
+    right: 60px;
+}
+
+/* Stat boxes (Name and HP bar) */
+.stat-box {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid #555;
+    width: 200px;
+    z-index: 3;
+}
+
+/* Correct positioning to mimic the classic game layout */
+#enemy-stats { 
+    top: 20px; 
+    left: 20px; 
+}
+
+#player-stats { 
+    bottom: 120px; 
+    right: 20px; 
+}
+
+/* HP Bar Styling */
+.hp-background {
+    width: 100%;
+    height: 10px;
+    background: #ccc;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.hp-fill {
+    height: 100%;
+    background: #4caf50; 
+    width: 100%; 
+    transition: width 0.3s ease;
+}
+
+/* Bottom Menu for Attacks */
+#battle-menu {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100px;
+    background: #fff;
+    border-top: 4px solid #333;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 10px;
+    box-sizing: border-box;
+    z-index: 4;
+}
+
+.move-btn {
+    background: #eee;
+    border: 2px solid #333;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.move-btn:hover { background: #ddd; }

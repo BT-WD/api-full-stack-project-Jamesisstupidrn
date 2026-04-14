@@ -1,11 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>API Full Stack Project</title>
-  </head>
-  <body>
-    <!-- You code goes here-->
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeAPI Battle Sim</title>
+    <!-- 1. LINK TO YOUR CSS HERE -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Enemy Side -->
+        <div id="enemy-stats" class="stat-box">
+            <div id="enemy-name">LOADING...</div>
+            <div class="hp-background">
+                <div id="enemy-hp-fill" class="hp-fill"></div>
+            </div>
+        </div>
+        <img id="enemy-sprite" class="pokemon-sprite" src="" alt="Enemy">
+
+        <!-- Player Side -->
+        <img id="player-sprite" class="pokemon-sprite" src="" alt="Player">
+        <div id="player-stats" class="stat-box">
+            <div id="player-name">LOADING...</div>
+            <div class="hp-background">
+                <div id="player-hp-fill" class="hp-fill"></div>
+            </div>
+        </div>
+
+        <!-- Battle Menu -->
+        <div id="battle-menu">
+            <button class="move-btn" onclick="handleAttack('move1')">TACKLE</button>
+            <button class="move-btn" onclick="handleAttack('move2')">GROWL</button>
+            <button class="move-btn" onclick="handleAttack('move3')">QUICK ATTACK</button>
+            <button class="move-btn" onclick="handleAttack('move4')">HEAL</button>
+        </div>
+    </div>
+
+    <!-- 2. LINK TO YOUR JAVASCRIPT HERE -->
+    <script src="index.js"></script>
+</body>
 </html>
