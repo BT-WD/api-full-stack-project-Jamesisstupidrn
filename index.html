@@ -3,13 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokeAPI Battle Sim</title>
-    <!-- 1. LINK TO YOUR CSS HERE -->
+    <title>PokeRogue Clone</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
     <div id="game-container">
+      <!-- Add this directly below your #game-container div -->
+
+        <!-- Wave Display -->
+        <div id="wave-display" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 15px; border-radius: 20px; z-index: 5; font-weight: bold;">
+            WAVE: <span id="wave-count">1</span>
+        </div>
+
+        <!-- Reward Overlay (Hidden by default) -->
+        <div id="reward-screen">
+            <h2 style="margin-bottom: 10px;">WAVE CLEARED!</h2>
+            <p>Select a reward to continue:</p>
+            <div class="reward-container">
+                <button class="move-btn" onclick="applyReward('HEAL')">
+                    <b>POTION</b><br><small>Heal 30 HP</small>
+                </button>
+                <button class="move-btn" onclick="applyReward('ATTACK')">
+                    <b>X-ATTACK</b><br><small>+5 Damage</small>
+                </button>
+            </div>
+        </div>
+
         <!-- Enemy Side -->
         <div id="enemy-stats" class="stat-box">
             <div id="enemy-name">LOADING...</div>
@@ -30,14 +50,21 @@
 
         <!-- Battle Menu -->
         <div id="battle-menu">
-            <button class="move-btn" onclick="handleAttack('move1')">TACKLE</button>
-            <button class="move-btn" onclick="handleAttack('move2')">GROWL</button>
-            <button class="move-btn" onclick="handleAttack('move3')">QUICK ATTACK</button>
-            <button class="move-btn" onclick="handleAttack('move4')">HEAL</button>
+            <button class="move-btn" id="btn-1" onclick="handleAttack(0)">TACKLE</button>
+            <button class="move-btn" id="btn-2" onclick="handleAttack(1)">GROWL</button>
+            <button class="move-btn" id="btn-3" onclick="handleAttack(2)">QUICK ATTACK</button>
+            <button class="move-btn" id="btn-4" onclick="handleAttack(3)">HEAL</button>
         </div>
+
+        
     </div>
 
-    <!-- 2. LINK TO YOUR JAVASCRIPT HERE -->
+    <div id="battle-log-container">
+      <div id="battle-log">
+        <p>A wild Pokémon appeared!</p>
+      </div>
+    </div>
+
     <script src="index.js"></script>
 </body>
 </html>

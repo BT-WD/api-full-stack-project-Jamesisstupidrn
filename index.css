@@ -6,96 +6,144 @@
     border: 10px solid #333;
     overflow: hidden;
     font-family: 'Courier New', Courier, monospace;
-
-    /* FALLBACK: If image fails, you will see this blue color */
     background-color: #87CEEB; 
-
-    /* FIXED DIRECT LINK (Ends in .png) */
-    background-image: url('https://githubusercontent.com');
     
-    background-size: 100% 100%; /* Force image to fill the 600x400 box */
+    /* Classic PokeRogue Grass Background */
+    background-image: url('https://githubusercontent.com');
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
 
+/* PokeRogue Shop/Reward Overlay */
+#reward-screen {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 10;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
 
-/* Positioning for the Pokémon sprites */
+.reward-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Pixelated sprites */
 .pokemon-sprite {
-    width: 150px;
+    width: 160px;
     position: absolute;
     image-rendering: pixelated; 
     z-index: 2;
+    transition: transform 0.2s ease;
 }
 
-/* Combined your IDs to match the HTML exactly */
 #player-sprite {
-    bottom: 120px; 
+    bottom: 110px; 
     left: 40px;
 }
 
 #enemy-sprite {
-    top: 60px;
+    top: 50px;
     right: 60px;
 }
 
-/* Stat boxes (Name and HP bar) */
+/* Floating Stat Boxes */
 .stat-box {
     position: absolute;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px;
-    border-radius: 5px;
-    border: 2px solid #555;
-    width: 200px;
+    background: #fdfdfd;
+    padding: 8px;
+    border-radius: 0 10px 0 10px;
+    border: 3px solid #444;
+    width: 220px;
     z-index: 3;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
 }
 
-/* Correct positioning to mimic the classic game layout */
-#enemy-stats { 
-    top: 20px; 
-    left: 20px; 
-}
-
-#player-stats { 
-    bottom: 120px; 
-    right: 20px; 
-}
+#enemy-stats { top: 25px; left: 25px; }
+#player-stats { bottom: 130px; right: 25px; }
 
 /* HP Bar Styling */
 .hp-background {
     width: 100%;
-    height: 10px;
-    background: #ccc;
-    border-radius: 5px;
+    height: 12px;
+    background: #444;
+    border-radius: 6px;
     margin-top: 5px;
+    overflow: hidden;
+    border: 1px solid #000;
 }
 
 .hp-fill {
     height: 100%;
-    background: #4caf50; 
+    background: #4caf50; /* Green by default */
     width: 100%; 
-    transition: width 0.3s ease;
+    transition: width 0.5s ease, background-color 0.3s ease;
 }
 
-/* Bottom Menu for Attacks */
+/* Battle Menu */
 #battle-menu {
     position: absolute;
     bottom: 0;
     width: 100%;
     height: 100px;
-    background: #fff;
-    border-top: 4px solid #333;
+    background: #3c3c3c;
+    border-top: 6px solid #222;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding: 10px;
+    gap: 5px;
+    padding: 8px;
     box-sizing: border-box;
     z-index: 4;
 }
 
 .move-btn {
-    background: #eee;
-    border: 2px solid #333;
+    background: #fff;
+    border: 3px solid #000;
     cursor: pointer;
+    font-size: 14px;
     font-weight: bold;
+    text-transform: uppercase;
+    transition: 0.1s;
 }
 
-.move-btn:hover { background: #ddd; }
+.move-btn:hover:not(:disabled) {
+    background: #ffcb05; /* Pokemon Yellow */
+    transform: scale(1.02);
+}
+
+.move-btn:disabled {
+    background: #888;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+
+#battle-log-container {
+    width: 600px; /* Match game width */
+    height: 120px;
+    background: #333;
+    border: 10px solid #555;
+    margin-top: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    color: #00ff00; /* Retro green text */
+    font-family: 'Courier New', Courier, monospace;
+    overflow-y: auto; /* Scroll when full */
+}
+
+#battle-log p {
+    margin: 4px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    border-bottom: 1px solid #444;
+}
