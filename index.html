@@ -9,30 +9,47 @@
 <body>
 
     <div id="game-container">
-      <!-- Add this directly below your #game-container div -->
-
         <!-- Wave Display -->
         <div id="wave-display" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 15px; border-radius: 20px; z-index: 5; font-weight: bold;">
             WAVE: <span id="wave-count">1</span>
         </div>
 
-        <!-- Reward Overlay (Hidden by default) -->
+        <!-- Run Stats / Leaderboard -->
+        <div id="run-stats" style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 12px; border-radius: 8px; z-index: 5; font-size: 13px; text-align:left;">
+            <div><strong>Best Wave:</strong> <span id="best-wave">0</span></div>
+            <div><strong>Total XP:</strong> <span id="total-xp">0</span></div>
+            <div style="margin-top:6px;"><strong>Recent Runs:</strong></div>
+            <div id="recent-runs" style="max-height:120px; overflow:auto; margin-top:6px; font-size:12px;"></div>
+            <div style="margin-top:6px; text-align:right;"><button id="clear-stats-btn" style="font-size:12px; padding:4px 6px;">Clear</button></div>
+        </div>
+
+        <!-- Reward Overlay -->
         <div id="reward-screen">
             <h2 style="margin-bottom: 10px;">WAVE CLEARED!</h2>
             <p>Select a reward to continue:</p>
             <div class="reward-container">
-                <button class="move-btn" onclick="applyReward('HEAL')">
-                    <b>POTION</b><br><small>Heal 30 HP</small>
+                <button class="reward-btn" onclick="applyReward('HEAL')">
+                    <b>POTION</b><br><small>Heal 40 HP</small>
                 </button>
-                <button class="move-btn" onclick="applyReward('ATTACK')">
-                    <b>X-ATTACK</b><br><small>+5 Damage</small>
+                <button class="reward-btn" onclick="applyReward('ITEM')">
+                    <b>ITEM</b><br><small>Receive an item</small>
                 </button>
             </div>
         </div>
 
+        <!-- Item Overlay -->
+        <div id="item-screen">
+            <h3>Your Items</h3>
+            <div id="item-list" style="display:flex; gap:12px; justify-content:center; margin-top:12px;"></div>
+            <div style="margin-top:16px;"><button onclick="closeItemScreen()" class="reward-btn">Close</button></div>
+        </div>
+
         <!-- Enemy Side -->
         <div id="enemy-stats" class="stat-box">
-            <div id="enemy-name">LOADING...</div>
+            <div class="name-header">
+                <span id="enemy-name">LOADING...</span>
+                <span class="lvl-badge">Lv. <span id="enemy-lvl-text">1</span></span>
+            </div>
             <div class="hp-background">
                 <div id="enemy-hp-fill" class="hp-fill"></div>
             </div>
@@ -42,26 +59,33 @@
         <!-- Player Side -->
         <img id="player-sprite" class="pokemon-sprite" src="" alt="Player">
         <div id="player-stats" class="stat-box">
-            <div id="player-name">LOADING...</div>
+            <div class="name-header">
+                <span id="player-name">LOADING...</span>
+                <span class="lvl-badge">Lv. <span id="player-lvl-text">1</span></span>
+            </div>
             <div class="hp-background">
                 <div id="player-hp-fill" class="hp-fill"></div>
+            </div>
+            <!-- XP Bar -->
+            <div class="xp-container" style="width: 100%; height: 6px; background: #333; margin-top: 5px; border-radius: 3px; overflow: hidden;">
+               <div id="player-xp-fill" style="width: 0%; height: 100%; background: #2196F3; transition: width 0.3s;"></div>
             </div>
         </div>
 
         <!-- Battle Menu -->
-        <div id="battle-menu">
-            <button class="move-btn" id="btn-1" onclick="handleAttack(0)">TACKLE</button>
-            <button class="move-btn" id="btn-2" onclick="handleAttack(1)">GROWL</button>
-            <button class="move-btn" id="btn-3" onclick="handleAttack(2)">QUICK ATTACK</button>
-            <button class="move-btn" id="btn-4" onclick="handleAttack(3)">HEAL</button>
-        </div>
-
-        
-    </div>
+         <div id="battle-menu">
+             <button class="move-btn" id="btn-1" onclick="handleAttack(0)">MOVE 1</button>
+             <button class="move-btn" id="btn-2" onclick="handleAttack(1)">MOVE 2</button>
+             <button class="move-btn" id="btn-3" onclick="handleAttack(2)">MOVE 3</button>
+             <button class="move-btn" id="btn-4" onclick="handleAttack(3)">MOVE 4</button>
+         </div>
+        <!-- Quick Items button -->
+        <button id="open-items" class="move-btn" onclick="openItemScreen()" style="position:absolute; bottom:110px; left:18px; z-index:5;">ITEMS</button>
+     </div>
 
     <div id="battle-log-container">
       <div id="battle-log">
-        <p>A wild Pokémon appeared!</p>
+        <p>> A wild Pokémon appeared!</p>
       </div>
     </div>
 

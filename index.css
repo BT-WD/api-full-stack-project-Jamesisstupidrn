@@ -126,7 +126,34 @@
     cursor: not-allowed;
     opacity: 0.7;
 }
+/* Reward buttons (independent from move-btn so they won't be disabled by updateMenuButtons */
+.reward-btn {
+    background: #fff;
+    border: 3px solid #000;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 8px 12px;
+}
+.reward-btn:hover:not(:disabled) {
+    background: #ffcb05;
+    transform: scale(1.02);
+}
 
+/* Item screen */
+#item-screen {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 11; color: white; text-align: center; align-items:center; justify-content:center;
+    display:flex; flex-direction:column; gap:12px; padding-top:60px;
+}
+.item-btn {
+    background: #fff; color:#000; border:2px solid #222; padding:8px 12px; font-weight:bold; cursor:pointer;
+}
+.item-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
 #battle-log-container {
     width: 600px; /* Match game width */
@@ -146,4 +173,43 @@
     font-size: 14px;
     line-height: 1.4;
     border-bottom: 1px solid #444;
+}
+
+/* Attack animations */
+@keyframes player-attack-move {
+  0% { transform: translateX(0) translateY(0) scale(1); }
+  40% { transform: translateX(50px) translateY(-10px) scale(1.05); }
+  70% { transform: translateX(-10px) translateY(0) scale(1); }
+  100% { transform: translateX(0) translateY(0) scale(1); }
+}
+@keyframes enemy-attack-move {
+  0% { transform: translateX(0) translateY(0) scale(1); }
+  40% { transform: translateX(-50px) translateY(-10px) scale(1.05); }
+  70% { transform: translateX(10px) translateY(0) scale(1); }
+  100% { transform: translateX(0) translateY(0) scale(1); }
+}
+
+.attack-anim-player {
+  animation: player-attack-move 420ms ease-in-out;
+  z-index: 6;
+}
+.attack-anim-enemy {
+  animation: enemy-attack-move 420ms ease-in-out;
+  z-index: 6;
+}
+
+/* Flash on hit */
+@keyframes hit-flash {
+  0% { filter: brightness(1.6) saturate(1.2); }
+  50% { filter: brightness(0.6) saturate(0.8); }
+  100% { filter: none; }
+}
+.hit-flash {
+  animation: hit-flash 260ms ease-in-out;
+}
+
+/* Special effect for special moves */
+.special-anim {
+  box-shadow: 0 0 18px 6px rgba(66,135,245,0.7) inset, 0 0 22px 6px rgba(66,135,245,0.15);
+  transform-origin: center center;
 }
