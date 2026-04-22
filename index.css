@@ -1,4 +1,3 @@
-/* Container for the entire game */
 #game-container {
     width: 600px;
     height: 400px;
@@ -9,7 +8,8 @@
     background-color: #87CEEB; 
     
     /* Classic PokeRogue Grass Background */
-    background-image: url('https://githubusercontent.com');
+    /* removed invalid host URL that caused network error; replace with a valid URL or a local asset path */
+    background-image: none;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

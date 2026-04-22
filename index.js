@@ -12,9 +12,17 @@ let xAttacks = 0;
 // Combat stats (will be initialized from API data when available)
 let playerAttack = 10, playerDefense = 10, playerSpAtk = 10, playerSpDef = 10, playerSpeed = 10;
 let enemyAttack = 10, enemyDefense = 10, enemySpAtk = 10, enemySpDef = 10, enemySpeed = 10;
-// Stat stages (-6..+6) for temporary buffs/debuffs
-let playerStatStage = { attack:0, defense:0, 'special-attack':0, 'special-defense':0, speed:0 };
-let enemyStatStage = { attack:0, defense:0, 'special-attack':0, 'special-defense':0, speed:0 };
+// Types for player/enemy (from PokeAPI)
+let playerTypes = [], enemyTypes = [];
+// Cache for type data (damage relations)
+const typeCache = {};
+
+// Colors for simple type badges
+const typeColors = {
+    normal: '#A8A77A', fire: '#EE8130', water: '#6390F0', electric:'#F7D02C', grass:'#7AC74C', ice:'#96D9D6',
+    fighting:'#C22E28', poison:'#A33EA1', ground:'#E2BF65', flying:'#A98FF3', psychic:'#F95587', bug:'#A6B91A',
+    rock:'#B6A136', ghost:'#735797', dragon:'#6F35FC', dark:'#705746', steel:'#B7B7CE', fairy:'#D685AD'
+};
 
 function statStageMultiplier(stage) {
     // Pokemon-style stage multipliers: if stage>=0 -> (2+stage)/2, else -> 2/(2-stage)
@@ -22,7 +30,97 @@ function statStageMultiplier(stage) {
     return 2 / (2 - stage);
 }
 
+async function getTypeData(typeName) {
+    if (!typeName) return null;
+    if (typeCache[typeName]) return typeCache[typeName];
+    try {
+        const res = await fetch(`https://pokeapi.co/api/v2/type/${typeName}`);
+        const data = await res.json();
+        typeCache[typeName] = data;
+        return data;
+    } catch (e) {
+        console.warn('Failed to fetch type data for', typeName, e);
+        return null;
+    }
+}
+
+async function getTypeEffectiveness(moveType, defenderTypes) {
+    // defenderTypes: array of type names
+    if (!moveType || !defenderTypes || defenderTypes.length === 0) return 1;
+    const moveTypeData = await getTypeData(moveType);
+    if (!moveTypeData || !moveTypeData.damage_relations) return 1;
+    let mult = 1;
+    const dr = moveTypeData.damage_relations;
+    defenderTypes.forEach(dt => {
+        if (!dt) return;
+        if ((dr.no_damage_to || []).some(t => t.name === dt)) mult *= 0;
+        else if ((dr.double_damage_to || []).some(t => t.name === dt)) mult *= 2;
+        else if ((dr.half_damage_to || []).some(t => t.name === dt)) mult *= 0.5;
+        // Note: using the attacking type's relations (double_damage_to etc.)
+    });
+    return mult;
+}
+
 // --- Core Game Functions ---
+
+// Stat stages (-6..+6) for temporary buffs/debuffs
+let playerStatStage = { attack:0, defense:0, 'special-attack':0, 'special-defense':0, speed:0 };
+let enemyStatStage = { attack:0, defense:0, 'special-attack':0, 'special-defense':0, speed:0 };
+
+// Expose to window so other runtime code can reference safely
+window.playerStatStage = window.playerStatStage || playerStatStage;
+window.enemyStatStage = window.enemyStatStage || enemyStatStage;
+
+// Party support: multiple player Pokémon
+let playerParty = []; // array of { name, sprite, types, stats..., currentHP, maxHP, moves }
+let currentPlayerIndex = 0; // index in playerParty of active Pokémon
+
+function renderTypesUI() {
+    // Helper to create badge HTML
+    const makeBadges = (types) => {
+        if (!Array.isArray(types) || types.length === 0) return '';
+        return types.map(t => `<span class="type-badge" style="background:${typeColors[t]||'#666'}; margin-left:6px; padding:2px 6px; border-radius:6px; font-size:11px; text-transform:capitalize;">${t}</span>`).join('');
+    };
+
+    // PLAYER: place badges next to level badge (so they appear to the right of the level)
+    const playerHeader = document.querySelector('#player-stats .name-header');
+    if (playerHeader) {
+        const playerNameEl = document.getElementById('player-name');
+        const lvlBadge = playerHeader.querySelector('.lvl-badge');
+        // Ensure base name is preserved
+        const base = playerNameEl.dataset.baseName || (playerNameEl.textContent || '').trim() || 'PLAYER';
+        playerNameEl.dataset.baseName = base;
+        playerNameEl.innerText = base;
+        // Ensure a container for badges exists next to level
+        let badgeContainer = playerHeader.querySelector('.type-badges');
+        if (!badgeContainer) {
+            badgeContainer = document.createElement('span');
+            badgeContainer.className = 'type-badges';
+            // insert after lvlBadge if present, otherwise append
+            if (lvlBadge && lvlBadge.parentNode) lvlBadge.parentNode.insertBefore(badgeContainer, lvlBadge.nextSibling);
+            else playerHeader.appendChild(badgeContainer);
+        }
+        badgeContainer.innerHTML = makeBadges(playerTypes);
+    }
+
+    // ENEMY: same behavior — badges next to its level
+    const enemyHeader = document.querySelector('#enemy-stats .name-header');
+    if (enemyHeader) {
+        const enemyNameEl = document.getElementById('enemy-name');
+        const lvlBadgeE = enemyHeader.querySelector('.lvl-badge');
+        const baseE = enemyNameEl.dataset.baseName || (enemyNameEl.textContent || '').trim() || 'ENEMY';
+        enemyNameEl.dataset.baseName = baseE;
+        enemyNameEl.innerText = baseE;
+        let badgeContainerE = enemyHeader.querySelector('.type-badges');
+        if (!badgeContainerE) {
+            badgeContainerE = document.createElement('span');
+            badgeContainerE.className = 'type-badges';
+            if (lvlBadgeE && lvlBadgeE.parentNode) lvlBadgeE.parentNode.insertBefore(badgeContainerE, lvlBadgeE.nextSibling);
+            else enemyHeader.appendChild(badgeContainerE);
+        }
+        badgeContainerE.innerHTML = makeBadges(enemyTypes);
+    }
+}
 
 async function loadPokemon() {
     try {
@@ -34,6 +132,10 @@ async function loadPokemon() {
         // Initialize enemy stats from API (scale slightly with enemyLevel set in setEnemyStats)
         const enemyStatsMap = {};
         enemyData.stats.forEach(s => { enemyStatsMap[s.stat.name] = s.base_stat; });
+        // Set enemy types
+        enemyTypes = enemyData.types.map(t => t.type.name);
+        // render type badges after we've set the actual displayed name
+        renderTypesUI();
         enemyAttack = Math.max(1, Math.floor((enemyStatsMap['attack'] || 10) * (1 + (enemyLevel - 1) * 0.05)));
         enemyDefense = Math.max(1, Math.floor((enemyStatsMap['defense'] || 10) * (1 + (enemyLevel - 1) * 0.05)));
         enemySpAtk = Math.max(1, Math.floor((enemyStatsMap['special-attack'] || 8) * (1 + (enemyLevel - 1) * 0.04)));
@@ -42,8 +144,12 @@ async function loadPokemon() {
 
         setEnemyStats();
         enemyStatus = null; // Reset status for new enemy
-        document.getElementById('enemy-name').innerText = enemyData.name.toUpperCase();
+        // set enemy display name and sprite; ensure dataset.baseName is updated so renderTypesUI won't revert to LOADING
+        const enemyNameEl = document.getElementById('enemy-name');
+        if (enemyNameEl) { enemyNameEl.dataset.baseName = enemyData.name.toUpperCase(); enemyNameEl.innerText = enemyData.name.toUpperCase(); }
         document.getElementById('enemy-sprite').src = enemyData.sprites.front_default;
+        // render type badges after we've set the actual displayed name
+        renderTypesUI();
 
         if (wave === 1) {
             // Only load player and moves if playerMoves empty (preserve PP across waves/level ups)
@@ -51,7 +157,12 @@ async function loadPokemon() {
                 const playerID = Math.floor(Math.random() * 151) + 1;
                 const playerRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${playerID}`);
                 const playerData = await playerRes.json();
-                document.getElementById('player-name').innerText = playerData.name.toUpperCase();
+                // Set player types
+                playerTypes = playerData.types.map(t => t.type.name);
+                // render type badges after we've set the actual displayed name
+                renderTypesUI();
+                const playerNameEl = document.getElementById('player-name');
+                if (playerNameEl) { playerNameEl.dataset.baseName = playerData.name.toUpperCase(); playerNameEl.innerText = playerData.name.toUpperCase(); }
                 document.getElementById('player-sprite').src = playerData.sprites.back_default;
                 
                 const moveUrls = playerData.moves.slice(0, 4).map(m => m.move.url);
@@ -247,7 +358,14 @@ async function executeMove(attacker, moveIndex) {
         let statFactor = effectiveAttacker / Math.max(1, effectiveDefender);
         let raw = (basePower * statFactor) / 6; // base scaling
         if (isPlayer) raw = raw * playerDamageMultiplier + bonusDamage;
-        let finalDamage = Math.max(1, Math.floor(raw * variance * critMultiplier));
+        // Apply type effectiveness multiplier
+        const moveTypeName = move.type && move.type.name ? move.type.name : null;
+        const defenderTypeList = isPlayer ? enemyTypes : playerTypes;
+        const typeMult = await getTypeEffectiveness(moveTypeName, defenderTypeList);
+        // STAB (same-type attack bonus)
+        const attackerTypeList = isPlayer ? playerTypes : enemyTypes;
+        const stab = (moveTypeName && attackerTypeList.includes(moveTypeName)) ? 1.5 : 1;
+        let finalDamage = Math.max(1, Math.floor(raw * variance * critMultiplier * typeMult * stab));
 
         if (isPlayer) {
             enemyHP = Math.max(0, enemyHP - finalDamage);
@@ -259,6 +377,11 @@ async function executeMove(attacker, moveIndex) {
             es.classList.add('hit-flash');
             es.addEventListener('animationend', () => es.classList.remove('hit-flash'), { once: true });
             if (damageClass === 'special') { es.classList.add('special-anim'); setTimeout(() => es.classList.remove('special-anim'), 500); }
+            // Effectiveness message
+            if (typeMult > 1) logMessage("It's super effective!");
+            else if (typeMult > 0 && typeMult < 1) logMessage("It's not very effective...");
+            else if (typeMult === 0) logMessage("It had no effect...");
+            if (stab > 1) logMessage('STAB!');
          } else {
             playerHP = Math.max(0, playerHP - finalDamage);
             updateHPBar('player-hp-fill', (playerHP / playerMaxHP) * 100);
@@ -269,6 +392,11 @@ async function executeMove(attacker, moveIndex) {
             ps.classList.add('hit-flash');
             ps.addEventListener('animationend', () => ps.classList.remove('hit-flash'), { once: true });
             if (damageClass === 'special') { ps.classList.add('special-anim'); setTimeout(() => ps.classList.remove('special-anim'), 500); }
+            // Effectiveness message
+            if (typeMult > 1) logMessage("It's super effective!");
+            else if (typeMult > 0 && typeMult < 1) logMessage("It's not very effective...");
+            else if (typeMult === 0) logMessage("It had no effect...");
+            if (stab > 1) logMessage('STAB!');
          }
         
         totalDamageDealt += finalDamage;
@@ -543,8 +671,104 @@ function clearRunStats() {
     loadRunStats();
 }
 
-loadPokemon();
-// Initialize run stats UI
-loadRunStats();
-// Wire clear button
-document.getElementById('clear-stats-btn').onclick = clearRunStats;
+// Initialize run stats UI and start game after DOM is ready
+window.addEventListener('load', () => {
+    loadRunStats();
+    loadPokemon();
+    const clearBtn = document.getElementById('clear-stats-btn');
+    if (clearBtn) clearBtn.onclick = () => { clearRunStats(); saveRunStats(); };
+    // Periodically persist run stats in case of unexpected exits
+    setInterval(saveRunStats, 5000);
+    // Ensure stats are saved before page unload
+    window.addEventListener('beforeunload', saveRunStats);
+});
+
+// Helper: sync active player variables from playerParty[currentPlayerIndex]
+function syncActiveFromParty(index) {
+    if (!Array.isArray(playerParty) || playerParty.length === 0) return;
+    currentPlayerIndex = Math.max(0, Math.min(index, playerParty.length - 1));
+    const p = playerParty[currentPlayerIndex];
+    // Stats
+    playerTypes = p.types || [];
+    playerAttack = p.stats.attack || 10;
+    playerDefense = p.stats.defense || 10;
+    playerSpAtk = p.stats['special-attack'] || 8;
+    playerSpDef = p.stats['special-defense'] || 8;
+    playerSpeed = p.stats.speed || 10;
+    playerMaxHP = p.maxHP || p.stats.hp || 100;
+    playerHP = Math.max(0, Math.min(p.currentHP || playerMaxHP, playerMaxHP));
+    // Moves
+    playerMoves = p.moves || [];
+    // Update UI
+    const playerNameEl = document.getElementById('player-name');
+    if (playerNameEl) { playerNameEl.dataset.baseName = p.name.toUpperCase(); playerNameEl.innerText = p.name.toUpperCase(); }
+    const ps = document.getElementById('player-sprite'); if (ps) ps.src = p.sprite || ps.src;
+    // Update move buttons
+    playerMoves.forEach((move, i) => {
+        const btn = document.getElementById(`btn-${i+1}`);
+        if (btn) btn.innerText = `${move.name.replace('-', ' ').toUpperCase()} (PP ${move.currentPP || move.pp || 0}/${move.pp || 5})`;
+    });
+    updateHPBar('player-hp-fill', (playerHP / playerMaxHP) * 100);
+    renderTypesUI();
+}
+
+function openPartyScreen() {
+    renderPartyScreen();
+    document.getElementById('party-screen').style.display = 'flex';
+}
+function closePartyScreen() { document.getElementById('party-screen').style.display = 'none'; }
+
+function renderPartyScreen() {
+    const list = document.getElementById('party-list');
+    list.innerHTML = '';
+    playerParty.forEach((p, idx) => {
+        const el = document.createElement('div');
+        el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.gap = '8px'; el.style.marginBottom = '8px';
+        el.innerHTML = `
+            <img src="${p.sprite||''}" style="width:48px;height:48px;image-rendering:pixelated;border:2px solid #222;"/>
+            <div style="flex:1;text-align:left;">
+                <div style="font-weight:700">${p.name.toUpperCase()} <small style='margin-left:6px'>Lv.${p.level||playerLevel}</small></div>
+                <div style="font-size:12px;color:#ddd">HP: ${p.currentHP}/${p.maxHP}</div>
+            </div>
+        `;
+        const btn = document.createElement('button');
+        btn.className = 'item-btn';
+        btn.innerText = (idx === currentPlayerIndex) ? 'Active' : (p.currentHP > 0 ? 'Switch' : 'Fainted');
+        btn.disabled = (idx === currentPlayerIndex) || (p.currentHP <= 0);
+        btn.onclick = () => { switchTo(idx); };
+        el.appendChild(btn);
+        list.appendChild(el);
+    });
+}
+
+// Switch to a party member (consumes player's turn)
+function switchTo(index) {
+    if (!isPlayerTurn) return; // can only switch on player's turn
+    if (index === currentPlayerIndex) return;
+    if (!playerParty[index] || playerParty[index].currentHP <= 0) return;
+    logMessage(`You sent out ${playerParty[index].name.toUpperCase()}!`);
+    // Sync active and close UI
+    syncActiveFromParty(index);
+    closePartyScreen();
+    // End player's turn and let enemy act
+    isPlayerTurn = false;
+    updateMenuButtons(false);
+    setTimeout(async () => {
+        await executeMove('enemy', 0);
+        if (playerHP > 0) {
+            applyStatusDamage('player');
+            setTimeout(() => { isPlayerTurn = true; updateMenuButtons(true); }, 800);
+        }
+    }, 800);
+}
+
+// Auto-switch when active Pokemon faints; returns true if switched, false if no available Pokemon
+function autoSwitchIfFainted() {
+    const aliveIdx = playerParty.findIndex(p => p.currentHP > 0);
+    if (aliveIdx >= 0) {
+        logMessage(`${playerParty[currentPlayerIndex].name.toUpperCase()} fainted! Switching to ${playerParty[aliveIdx].name.toUpperCase()}...`);
+        syncActiveFromParty(aliveIdx);
+        return true;
+    }
+    return false;
+}
